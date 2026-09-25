@@ -1,6 +1,8 @@
-# A2UI (Agent-to-UI) v0.9.1 — Automotive Digital Showroom & Test Drive Booking Demo
+# A2UI (Agent-to-UI) v0.9.1 + Google Gemini — Automotive Digital Showroom Demo
 
-An interactive reference web application showcasing the open-source **[A2UI (Agent-to-User Interface) v0.9.1 specification](https://a2ui.org/specification/v0.9.1-a2ui/)** ([github.com/google/A2UI](https://github.com/google/A2UI)) in an enterprise automotive e-commerce scenario (**Apex Mobility — "Aria" Digital Showroom Assistant**).
+An interactive reference web application showcasing **Google Gemini (`gemini-3.8-flash`)** combined with the open-source **[A2UI (Agent-to-User Interface) v0.9.1 specification](https://a2ui.org/specification/v0.9.1-a2ui/)** ([github.com/google/A2UI](https://github.com/google/A2UI)) in an enterprise automotive e-commerce scenario (**Apex Mobility — "Aria" Digital Showroom Assistant**).
+
+> 🧭 **New to A2UI or exploring this codebase?** Start with **[`EXPLORE.md`](./EXPLORE.md)** for a high-level guided tour of how Gemini (`gemini-3.8-flash`) and A2UI (`@a2ui/web_core` + `@a2ui/lit`) come together, where each piece lives in the repo, and a 5-minute interactive walkthrough.
 
 ---
 

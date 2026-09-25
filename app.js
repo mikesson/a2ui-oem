@@ -1692,9 +1692,311 @@
   }
 
   // ============================================================================
-  // 10. PUBLIC CONTROLLER API
+  // 10. LIVE GOOGLE GEMINI API (v1beta generateContent + A2UI responseSchema)
+  // ============================================================================
+  const GEMINI_KEY_STORAGE = 'A2UI_DEMO_GEMINI_API_KEY';
+  const GEMINI_MODEL_STORAGE = 'A2UI_DEMO_GEMINI_MODEL';
+
+  function getGeminiConfig() {
+    return {
+      apiKey: (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim(),
+      model: localStorage.getItem(GEMINI_MODEL_STORAGE) || 'gemini-3.8-flash'
+    };
+  }
+
+  function refreshGeminiHeaderBadge() {
+    const { apiKey, model } = getGeminiConfig();
+    const btn = document.getElementById('btn-gemini-config');
+    const label = document.getElementById('gemini-status-label');
+    const traceBadge = document.getElementById('gemini-trace-badge');
+    if (!btn || !label) return;
+    if (apiKey) {
+      btn.classList.add('gemini-live');
+      label.textContent = `${model}: LIVE API Connected`;
+      if (traceBadge) traceBadge.textContent = `LIVE (${model})`;
+    } else {
+      btn.classList.remove('gemini-live');
+      label.textContent = 'Gemini 3.8 Flash: Connect Key';
+      if (traceBadge) traceBadge.textContent = 'Simulated / Ready for API Key';
+    }
+  }
+
+  async function invokeLiveGeminiForA2ui(userPromptText) {
+    const { apiKey, model } = getGeminiConfig();
+    if (!apiKey) return null;
+
+    const activeSurface = surfaces.get(activeSurfaceId) || surfaces.get('aria_test_drive_form');
+    const clientDataModelSnapshot = activeSurface ? activeSurface.dataModel : {};
+
+    const systemInstructionText = `You are Aria, the Apex Mobility Digital Showroom Assistant powered by Google Gemini and the open-source A2UI (Agent-to-User Interface) v0.9.1 protocol (https://a2ui.org/specification/v0.9.1-a2ui/).
+You have access to the following vehicle fleet:
+- aero_gt: Apex Aero GT Coupé (BEV, 250 kW AWD, 552 km WLTP, €61,900, trims: ["GT Performance 250 kW AWD", "Aero Sportline AWD", "Executive Touring 210 kW"])
+- urban_ev: Apex Urban Crossover EV (BEV, 210 kW RWD, 580 km WLTP, €43,900, trims: ["Urban Launch Edition 210 kW", "Urban Sportline RWD", "City Loft 150 kW"])
+- horizon_phev: Apex Horizon 7-Seater PHEV (PHEV, 165 kW, 820 km Total, €49,800, trims: ["Horizon Selection PHEV", "Horizon Sportline AWD", "Grand Family 7-Seat"])
+- touring_phev: Apex Touring Estate PHEV (PHEV, 165 kW, 135 km EV, €52,400, trims: ["Executive Lounge Combi PHEV", "Touring Sportline PHEV", "Long-Range AWD"])
+
+Available Dealership IDs:
+- downtown_hub ("Apex Flagship Experience Center — Downtown")
+- northside_ev ("Apex Northside EV & Performance Hub")
+- westgate_center ("Apex Westgate Mobility Center")
+- airport_lounge ("Apex Airport Executive Test Drive Lounge")
+
+Current Active Surface ID: ${activeSurface ? activeSurface.surfaceId : 'none'}
+Current Browser a2uiClientDataModel JSON:
+${JSON.stringify(clientDataModelSnapshot, null, 2)}
+
+Determine the best A2UI operation in response to the user's message:
+- "render_fleet_discovery": If the user is asking to compare or browse available vehicles/SUVs.
+- "open_booking_form": If the user wants to start booking a test drive for a specific vehicle and the form is not yet open.
+- "mutate_booking_data_model": If the user wants to change the vehicle, dealership, date, time slot, duration (30 to 120 mins), or driver contact details on the booking form.
+- "confirm_booking_pass": If the user asks to confirm/submit their booking or issue the digital test drive pass.`;
+
+    const responseSchema = {
+      type: 'OBJECT',
+      properties: {
+        conversationalReply: {
+          type: 'STRING',
+          description: 'Warm, concise natural language reply to display in the chat bubble explaining the A2UI surface update.'
+        },
+        a2uiOperation: {
+          type: 'STRING',
+          enum: ['render_fleet_discovery', 'open_booking_form', 'mutate_booking_data_model', 'confirm_booking_pass']
+        },
+        targetVehicleId: {
+          type: 'STRING',
+          enum: ['aero_gt', 'urban_ev', 'horizon_phev', 'touring_phev']
+        },
+        dataModelPatches: {
+          type: 'OBJECT',
+          description: 'A2UI updateDataModel fields to patch in-place onto the active surface data model.',
+          properties: {
+            dealerId: { type: 'STRING', enum: ['downtown_hub', 'northside_ev', 'westgate_center', 'airport_lounge'] },
+            date: { type: 'STRING', description: 'YYYY-MM-DD date if mentioned' },
+            slot: { type: 'STRING', description: 'Time slot chip, e.g. "09:30 AM", "11:30 AM", "02:30 PM", or "04:30 PM"' },
+            durationMins: { type: 'INTEGER', description: 'Duration in minutes (30, 45, 60, 75, 90, 105, or 120)' },
+            driverFullName: { type: 'STRING' },
+            driverEmail: { type: 'STRING' },
+            driverPhone: { type: 'STRING' }
+          }
+        }
+      },
+      required: ['conversationalReply', 'a2uiOperation', 'targetVehicleId']
+    };
+
+    const t0 = performance.now();
+    const candidateModels = Array.from(new Set([model, 'gemini-3-flash-preview', 'gemini-2.5-flash']));
+    let res = null;
+    let resolvedModel = model;
+
+    for (const candidate of candidateModels) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(candidate)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemInstructionText }] },
+          contents: [{ role: 'user', parts: [{ text: userPromptText }] }],
+          generationConfig: {
+            temperature: 0.2,
+            responseMimeType: 'application/json',
+            responseSchema
+          }
+        })
+      });
+      if (res.ok) {
+        resolvedModel = candidate;
+        break;
+      }
+      if (res.status !== 404) break;
+    }
+
+    if (!res || !res.ok) {
+      const errText = res ? await res.text() : 'Network error';
+      throw new Error(`Gemini API HTTP ${res ? res.status : 0}: ${errText.slice(0, 200)}`);
+    }
+
+    const data = await res.json();
+    const latencyMs = Math.round(performance.now() - t0);
+    const rawJsonText =
+      data.candidates &&
+      data.candidates[0] &&
+      data.candidates[0].content &&
+      data.candidates[0].content.parts &&
+      data.candidates[0].content.parts[0]
+        ? data.candidates[0].content.parts[0].text
+        : '{}';
+
+    const parsed = JSON.parse(rawJsonText);
+
+    const traceBadge = document.getElementById('gemini-trace-badge');
+    if (traceBadge) {
+      traceBadge.textContent = `LIVE ${model} • ${latencyMs}ms`;
+    }
+    const tracePre = document.getElementById('gemini-last-response-json');
+    if (tracePre) {
+      tracePre.textContent = JSON.stringify(
+        {
+          endpoint: `v1beta/models/${model}:generateContent`,
+          latencyMs,
+          userPrompt: userPromptText,
+          sentClientDataModelSurface: activeSurface ? activeSurface.surfaceId : null,
+          geminiStructuredA2uiOutput: parsed
+        },
+        null,
+        2
+      );
+    }
+
+    return { parsed, latencyMs, model };
+  }
+
+  async function applyLiveGeminiA2uiTurn(userPromptText) {
+    appendChatTurn('user', userPromptText);
+
+    // Temporary thinking indicator
+    const container = document.getElementById('chat-turns-container');
+    const loadingTurn = document.createElement('div');
+    loadingTurn.className = 'chat-turn agent-turn';
+    loadingTurn.innerHTML = `
+      <div class="agent-header">
+        <span class="assistant-avatar">A</span>
+        <span>Aria — Calling Live Google Gemini API...</span>
+        <span class="agent-protocol-pill">Gemini + A2UI v0.9.1</span>
+      </div>
+      <div class="agent-text-bubble" style="color:var(--ink-secondary);">
+        ✦ Streaming <code>a2uiClientDataModel</code> &amp; catalog schema to <strong>${getGeminiConfig().model}</strong>...
+      </div>
+    `;
+    container.appendChild(loadingTurn);
+
+    try {
+      const result = await invokeLiveGeminiForA2ui(userPromptText);
+      loadingTurn.remove();
+      if (!result) return false;
+
+      const { parsed, latencyMs, model } = result;
+      const veh = VEHICLE_FLEET[parsed.targetVehicleId] || VEHICLE_FLEET.aero_gt;
+      const patches = parsed.dataModelPatches || {};
+
+      if (parsed.a2uiOperation === 'render_fleet_discovery') {
+        runTurn1VehicleDiscovery();
+      } else if (parsed.a2uiOperation === 'confirm_booking_pass') {
+        runTurn4ConfirmedPass();
+      } else if (parsed.a2uiOperation === 'open_booking_form' || !surfaces.has('aria_test_drive_form')) {
+        runTurn2BookingConfigurator(veh.id, false);
+      } else {
+        // Live in-place A2UI updateDataModel mutation driven by Gemini's structured output!
+        currentTurn = 3;
+        const formSurface = surfaces.get('aria_test_drive_form');
+        const currentBooking = (formSurface && formSurface.dataModel && formSurface.dataModel.booking) || {};
+        const currentDriver = (formSurface && formSurface.dataModel && formSurface.dataModel.driver) || {};
+
+        const updatedBooking = {
+          ...currentBooking,
+          vehicleId: veh.id,
+          vehicleName: veh.name,
+          powertrain: veh.powertrain,
+          imageUrl: veh.imageUrl,
+          trim: veh.availableTrims[0],
+          availableTrims: veh.availableTrims,
+          dealerId: patches.dealerId || currentBooking.dealerId || 'northside_ev',
+          date: patches.date || currentBooking.date || '2025-05-18',
+          slot: patches.slot || currentBooking.slot || '02:30 PM',
+          durationMins: patches.durationMins || currentBooking.durationMins || 90
+        };
+
+        const updatedDriver = {
+          ...currentDriver,
+          fullName: patches.driverFullName || currentDriver.fullName || 'Alex Morgan',
+          email: patches.driverEmail || currentDriver.email || 'alex.morgan@example.com',
+          phone: patches.driverPhone || currentDriver.phone || '+49 89 555 0194'
+        };
+
+        appendChatTurn(
+          'agent',
+          `<strong>[Live ${model} • ${latencyMs}ms]</strong> ${parsed.conversationalReply}<br/><span style="font-size:12px;color:var(--ink-secondary);">⚡ Applied A2UI <code>updateDataModel</code> patch to <code>aria_test_drive_form</code> in-place.</span>`
+        );
+
+        processA2uiEnvelope(
+          {
+            version: 'v0.9',
+            updateDataModel: {
+              surfaceId: 'aria_test_drive_form',
+              path: '/booking',
+              value: updatedBooking
+            }
+          },
+          {
+            animateMutation: true,
+            mutationBannerText: `Live ${model} (${latencyMs}ms): Updated ${veh.name} • ${updatedBooking.dealerId} • ${updatedBooking.durationMins} min`
+          }
+        );
+
+        processA2uiEnvelope({
+          version: 'v0.9',
+          updateDataModel: {
+            surfaceId: 'aria_test_drive_form',
+            path: '/driver',
+            value: updatedDriver
+          }
+        });
+
+        updateBehindTheCurtainsPipeline(
+          `User Prompt: "${userPromptText.slice(0, 42)}..."`,
+          `LIVE ${model} (${latencyMs}ms) with responseSchema`,
+          `Emitted A2UI updateDataModel(/booking & /driver)`,
+          `Form mutated in-place without losing state!`,
+          `<strong>Live Gemini API Execution (${latencyMs}ms):</strong> Gemini received the current <code>a2uiClientDataModel</code> from the browser, parsed your natural-language request, and returned an A2UI v0.9.1 <code>updateDataModel</code> patch!`
+        );
+        renderNextStepGuideBanner(3);
+      }
+      return true;
+    } catch (err) {
+      loadingTurn.remove();
+      appendChatTurn(
+        'agent',
+        `<span style="color:var(--status-error);font-weight:700;">⚠️ Gemini API Error:</span> ${err.message}. Falling back to simulated A2UI turn.`
+      );
+      return false;
+    }
+  }
+
+  // ============================================================================
+  // 11. PUBLIC CONTROLLER API
   // ============================================================================
   window.ShowroomDemo = {
+    openGeminiModal() {
+      const { apiKey, model } = getGeminiConfig();
+      const input = document.getElementById('gemini-api-key-input');
+      const select = document.getElementById('gemini-model-select');
+      if (input) input.value = apiKey;
+      if (select) select.value = model;
+      document.getElementById('gemini-config-modal').style.display = 'flex';
+    },
+
+    closeGeminiModal() {
+      document.getElementById('gemini-config-modal').style.display = 'none';
+    },
+
+    saveGeminiKey() {
+      const keyVal = (document.getElementById('gemini-api-key-input').value || '').trim();
+      const modelVal = document.getElementById('gemini-model-select').value || 'gemini-2.5-flash';
+      if (keyVal) {
+        localStorage.setItem(GEMINI_KEY_STORAGE, keyVal);
+      } else {
+        localStorage.removeItem(GEMINI_KEY_STORAGE);
+      }
+      localStorage.setItem(GEMINI_MODEL_STORAGE, modelVal);
+      refreshGeminiHeaderBadge();
+      this.closeGeminiModal();
+    },
+
+    clearGeminiKey() {
+      localStorage.removeItem(GEMINI_KEY_STORAGE);
+      refreshGeminiHeaderBadge();
+      this.closeGeminiModal();
+    },
+
     runTurn(turnNumber) {
       if (turnNumber === 1) {
         this.resetToStart();
@@ -1742,7 +2044,7 @@
 
     setCatalogTheme(mode) {
       document.body.classList.toggle('catalog-basic', mode === 'basic');
-      document.getElementById('btn-catalog-brand').classList.toggle('active', mode === "brand");
+      document.getElementById('btn-catalog-brand').classList.toggle('active', mode === 'brand');
       document.getElementById('btn-catalog-basic').classList.toggle('active', mode === 'basic');
     },
 
@@ -1753,13 +2055,21 @@
       });
     },
 
-    handleCustomInput() {
+    async handleCustomInput() {
       const inp = document.getElementById('assistant-chat-input');
       const val = (inp.value || '').trim();
       if (!val) return;
       inp.value = '';
+
+      // If a Gemini API Key is configured, execute a REAL Gemini v1beta generateContent + A2UI responseSchema call!
+      if (getGeminiConfig().apiKey) {
+        const handledByGemini = await applyLiveGeminiA2uiTurn(val);
+        if (handledByGemini) return;
+      }
+
+      // Fallback deterministic routing when running in offline/no-key mode
       const lower = val.toLowerCase();
-      if (lower.includes('switch') || lower.includes('change') || lower.includes('munich') || lower.includes('karl') || lower.includes('90') || lower.includes('120')) {
+      if (lower.includes('switch') || lower.includes('change') || lower.includes('westgate') || lower.includes('northside') || lower.includes('airport') || lower.includes('90') || lower.includes('120')) {
         runTurn3ConversationalMutation();
       } else if (lower.includes('confirm') || lower.includes('pass')) {
         runTurn4ConfirmedPass();
@@ -1778,6 +2088,7 @@
       surfaces.clear();
       envelopeHistory.length = 0;
       document.getElementById('chat-turns-container').innerHTML = '';
+      refreshGeminiHeaderBadge();
       runTurn1VehicleDiscovery();
       const viewport = document.getElementById('chat-stream-viewport');
       viewport.scrollTop = 0;
@@ -1786,6 +2097,7 @@
 
   // Start cleanly at Turn 1 (Customer asks for Electric SUVs -> Aria shows Vehicle Explorer Cards)
   window.addEventListener('DOMContentLoaded', () => {
+    refreshGeminiHeaderBadge();
     window.ShowroomDemo.resetToStart();
   });
 })();

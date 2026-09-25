@@ -1170,3 +1170,108 @@ body.curtains-open .inspector-pane {
   font-size: 13px;
   letter-spacing: 0;
 }
+
+/* Gemini 2.5 Live API Button & Configuration Modal */
+.btn-gemini-status {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(37, 99, 235, 0.35) 100%);
+  border: 1px solid var(--brand-accent);
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+}
+
+.btn-gemini-status:hover {
+  background: var(--brand-accent);
+  color: var(--brand-navy-900);
+}
+
+.btn-gemini-status.gemini-live {
+  background: #059669;
+  border-color: #34d399;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(52, 211, 153, 0.4);
+}
+
+.gemini-sparkle {
+  color: var(--brand-accent);
+  font-size: 13px;
+}
+
+.btn-gemini-status.gemini-live .gemini-sparkle {
+  color: #a7f3d0;
+}
+
+.gemini-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 14, 26, 0.68);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.gemini-modal-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 560px;
+  box-shadow: 0 24px 60px rgba(9, 14, 26, 0.45);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.gemini-modal-header {
+  background: var(--brand-navy-900);
+  color: #ffffff;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gemini-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--brand-accent);
+  letter-spacing: 0.08em;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.gemini-modal-header h3 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.gemini-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.gemini-modal-footer {
+  padding: 14px 20px;
+  background: var(--surface-elevated);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
