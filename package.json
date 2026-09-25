@@ -1,0 +1,22 @@
+{
+  "name": "a2ui-automotive-test-drive-demo",
+  "version": "1.0.0",
+  "description": "Interactive reference implementation of the open-source A2UI (Agent-to-UI) v0.9.1 specification (https://a2ui.org/specification/v0.9.1-a2ui/) for an Automotive Digital Showroom & Test Drive Booking Assistant.",
+  "private": false,
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mikesson/a2ui-oem.git"
+  },
+  "scripts": {
+    "build": "node scripts/bundle-a2ui-sdk.js",
+    "start": "python3 -m http.server 8090 --bind 0.0.0.0"
+  },
+  "dependencies": {
+    "@a2ui/lit": "0.9.3",
+    "@a2ui/web_core": "0.9.2"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}

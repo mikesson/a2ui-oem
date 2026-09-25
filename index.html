@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Apex Mobility Digital Showroom — A2UI (Agent-to-UI) v0.9.1 Reference Demo</title>
+  <meta name="description" content="Interactive reference demonstration of the open-source A2UI (Agent-to-UI) v0.9.1 protocol (https://a2ui.org/specification/v0.9.1-a2ui/) powering an automotive digital showroom assistant for vehicle comparison and test drive booking." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=2" />
+</head>
+<body>
+  <!-- Top Header -->
+  <header class="top-navbar" id="top-navbar">
+    <div class="brand-cluster">
+      <div class="brand-wordmark">
+        <span class="brand-mark-circle">A</span>
+        <span>APEX MOBILITY</span>
+      </div>
+      <div class="brand-divider"></div>
+      <div class="assistant-badge">
+        <span>✦ Aria Digital Assistant</span>
+        <span style="opacity:0.6;">•</span>
+        <a href="https://a2ui.org/specification/v0.9.1-a2ui/" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline;">A2UI v0.9.1 Spec</a>
+      </div>
+    </div>
+
+    <div class="nav-controls">
+      <button id="btn-toggle-xray" class="btn-header-action" onclick="window.ShowroomDemo.toggleXrayMode()" title="Show A2UI Component Types and JSON Pointer Paths directly on the Left UI">
+        🔍 Toggle A2UI X-Ray Badges
+      </button>
+
+      <div class="catalog-switcher" role="group" aria-label="A2UI Component Catalog Switcher">
+        <button id="btn-catalog-brand" class="active" onclick="window.ShowroomDemo.setCatalogTheme('brand')">
+          Apex Branded Catalog
+        </button>
+        <button id="btn-catalog-basic" onclick="window.ShowroomDemo.setCatalogTheme('basic')">
+          Unstyled Basic Catalog
+        </button>
+      </div>
+
+      <button id="btn-reset-demo" class="btn-header-action" onclick="window.ShowroomDemo.resetToStart()">
+        ↺ Restart
+      </button>
+
+      <button id="btn-toggle-curtains" class="btn-curtains-toggle" onclick="window.ShowroomDemo.toggleCurtainsSidebar()" title="Slide in the Behind the Curtains A2UI Architecture & Live Data Model Inspector">
+        <span id="btn-curtains-label">⚡ Show "Behind the Curtains" ◀</span>
+        <span id="curtains-msg-count-badge" class="curtains-count-pill">3</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Floating Right-Edge Pull Tab (Visible when drawer is hidden) -->
+  <button id="floating-curtain-tab" class="floating-curtain-tab" onclick="window.ShowroomDemo.toggleCurtainsSidebar()" title="Open Behind the Curtains A2UI Inspector">
+    <span>⚡ Behind the Curtains (A2UI) ◀</span>
+  </button>
+
+  <!-- Split Workspace: Left = Customer Chat & A2UI, Right = Slide-In Behind the Curtains Drawer -->
+  <main class="workspace-grid" id="workspace-grid">
+    <!-- ======================================================================
+         LEFT SIDE: CUSTOMER EXPERIENCE (AUTOMOTIVE PORTAL + ARIA CHATBOT)
+         ====================================================================== -->
+    <section class="showroom-pane" aria-label="Customer View: Apex Mobility Aria Chat">
+      <!-- Storyboard Turn Stepper -->
+      <div class="scenario-ribbon">
+        <div class="scenario-steps">
+          <span class="scenario-label">Conversation Turns:</span>
+          <button id="step-btn-1" class="btn-scenario" onclick="window.ShowroomDemo.runTurn(1)">
+            <span class="step-num">1</span>
+            <span>Ask for Electric SUVs</span>
+          </button>
+          <button id="step-btn-2" class="btn-scenario" onclick="window.ShowroomDemo.runTurn(2)">
+            <span class="step-num">2</span>
+            <span>Select Vehicle &amp; Render Form</span>
+          </button>
+          <button id="step-btn-3" class="btn-scenario" onclick="window.ShowroomDemo.runTurn(3)">
+            <span class="step-num">3</span>
+            <span>Chat Mutates Form Live</span>
+          </button>
+          <button id="step-btn-4" class="btn-scenario" onclick="window.ShowroomDemo.runTurn(4)">
+            <span class="step-num">4</span>
+            <span>Confirm Digital Pass</span>
+          </button>
+        </div>
+
+        <button id="btn-play-next-turn" class="btn-next-turn-cta" onclick="window.ShowroomDemo.playNextTurn()">
+          <span id="next-turn-btn-label">▶ Start Turn 1: Ask Aria for Electric SUVs</span>
+        </button>
+      </div>
+
+      <!-- Chat Conversation & A2UI Rendered Surfaces Stream -->
+      <div class="chat-stream-viewport" id="chat-stream-viewport">
+        <!-- Dynamic Chat Turns Injected Here -->
+        <div id="chat-turns-container" style="display:flex;flex-direction:column;gap:20px;"></div>
+
+        <!-- Dynamic Guided Next-Step Banner at Bottom of Chat -->
+        <div id="next-step-banner-container"></div>
+      </div>
+
+      <!-- Chat Input Bar -->
+      <footer class="chat-composer-bar">
+        <div class="quick-prompt-chips">
+          <span style="font-size:11px;font-weight:700;color:var(--ink-tertiary);">Quick Chat Prompts:</span>
+          <button class="prompt-chip" onclick="window.ShowroomDemo.runTurn(1)">
+            1. "I'm looking for an electric or plug-in family SUV to test drive"
+          </button>
+          <button class="prompt-chip" onclick="window.ShowroomDemo.runTurn(2)">
+            2. "Book a test drive for the Apex Aero GT Coupé"
+          </button>
+          <button class="prompt-chip" onclick="window.ShowroomDemo.runTurn(3)">
+            3. "Switch to the Urban Crossover EV at Westgate Center on Sunday for 90 min"
+          </button>
+          <button class="prompt-chip" onclick="window.ShowroomDemo.runTurn(4)">
+            4. "Confirm my test drive booking &amp; issue pass"
+          </button>
+        </div>
+
+        <form class="composer-input-row" onsubmit="event.preventDefault(); window.ShowroomDemo.handleCustomInput();">
+          <input
+            type="text"
+            id="assistant-chat-input"
+            class="composer-input"
+            placeholder="Type a message to Aria (e.g., 'Change dealership to Northside EV Hub and set duration to 120 min')..."
+            autocomplete="off"
+          />
+          <button type="submit" class="btn-send-chat">Send &rarr;</button>
+        </form>
+      </footer>
+    </section>
+
+    <!-- ======================================================================
+         RIGHT SIDE: SLIDE-IN "BEHIND THE CURTAINS" — LIVE A2UI ENGINE & X-RAY
+         ====================================================================== -->
+    <aside class="inspector-pane" id="inspector-pane" aria-label="Behind the Curtains: A2UI Engine" aria-hidden="true">
+      <div class="inspector-header">
+        <div class="inspector-title">
+          <span>⚡ Behind the Curtains: A2UI v0.9.1 Architecture</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-family:var(--font-mono);font-size:11px;color:var(--studio-muted);" id="curtain-turn-indicator">
+            Ready • Waiting for Turn 1
+          </span>
+          <button type="button" class="btn-close-curtains" onclick="window.ShowroomDemo.toggleCurtainsSidebar(false)" title="Hide Behind the Curtains Sidebar">
+            ✕ Hide ▶
+          </button>
+        </div>
+      </div>
+
+      <!-- 1. Live 4-Stage Pipeline Visualizer (Explains What Just Happened!) -->
+      <div class="curtain-pipeline-box">
+        <div style="font-size:11.5px;color:var(--studio-text);line-height:1.4;" id="curtain-narrative-summary">
+          Click <strong>"▶ Start Turn 1"</strong> on the left (or any prompt chip) to watch how a customer message triggers the Agent, queries backend inventory tools, and streams <strong><a href="https://a2ui.org/specification/v0.9.1-a2ui/" target="_blank" rel="noopener noreferrer" style="color:var(--brand-accent);">A2UI v0.9.1 JSON envelopes</a></strong> into the chat.
+        </div>
+
+        <div class="pipeline-steps-grid">
+          <div class="pipeline-node" id="pnode-1">
+            <span class="node-step">STAGE 1 • TRIGGER</span>
+            <span class="node-title" id="pnode-1-title">Customer Input</span>
+            <span class="node-detail" id="pnode-1-detail">Waiting for chat message or A2UI button click...</span>
+          </div>
+          <div class="pipeline-node" id="pnode-2">
+            <span class="node-step">STAGE 2 • AGENT &amp; TOOLS</span>
+            <span class="node-title" id="pnode-2-title">Showroom Agent</span>
+            <span class="node-detail" id="pnode-2-detail">Queries Vehicle Inventory &amp; Dealership APIs</span>
+          </div>
+          <div class="pipeline-node" id="pnode-3">
+            <span class="node-step">STAGE 3 • A2UI STREAM</span>
+            <span class="node-title" id="pnode-3-title">JSON Envelopes</span>
+            <span class="node-detail" id="pnode-3-detail">createSurface, updateComponents, updateDataModel</span>
+          </div>
+          <div class="pipeline-node" id="pnode-4">
+            <span class="node-step">STAGE 4 • CLIENT UI</span>
+            <span class="node-title" id="pnode-4-title">@a2ui/web_core + @a2ui/lit</span>
+            <span class="node-detail" id="pnode-4-detail">Maps JSON to Branded Catalog &amp; 2-way state</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Interactive Right -> Left Server Push Controls -->
+      <div class="curtain-action-bar">
+        <span class="curtain-action-title">
+          🎛️ Interactive Test: Simulate Server Push (`updateDataModel`) From Right Bar &rarr; Mutates Left UI Live!
+        </span>
+        <div class="curtain-btn-row">
+          <button class="btn-curtain-push" onclick="window.ShowroomDemo.triggerServerPush('switch_urban')">
+            ⚡ Push: Switch Vehicle to Urban Crossover EV
+          </button>
+          <button class="btn-curtain-push" onclick="window.ShowroomDemo.triggerServerPush('switch_northside_120')">
+            ⚡ Push: Set Northside Hub + 120 min
+          </button>
+          <button class="btn-curtain-push" onclick="window.ShowroomDemo.triggerServerPush('invalid_email')">
+            ⚠️ Push: Inject Invalid Email (Triggers Client `checks`)
+          </button>
+          <button class="btn-curtain-push" onclick="window.ShowroomDemo.triggerServerPush('fix_email')">
+            ✓ Push: Restore Valid Email
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. Inspector Tabs -->
+      <div class="inspector-tabs" role="tablist">
+        <button id="tab-datamodel" class="inspector-tab active" onclick="window.ShowroomDemo.switchInspectorTab('datamodel')">
+          Live 2-Way Data Model (`a2uiClientDataModel`)
+        </button>
+        <button id="tab-components" class="inspector-tab" onclick="window.ShowroomDemo.switchInspectorTab('components')">
+          Component Tree (Hover to Spotlight Left UI)
+        </button>
+        <button id="tab-envelopes" class="inspector-tab" onclick="window.ShowroomDemo.switchInspectorTab('envelopes')">
+          Streamed JSONL Envelopes (<span id="envelope-count">0</span>)
+        </button>
+      </div>
+
+      <!-- Tab 1: Live Two-Way Synchronized Data Model -->
+      <div id="panel-datamodel" class="inspector-body">
+        <div id="last-binding-change-banner" class="live-sync-flash" style="display:none;"></div>
+
+        <div class="protocol-card">
+          <div class="protocol-card-header">
+            <span>Active Surface State (Bound via JSON Pointers)</span>
+            <span class="msg-badge msg-updateDataModel" id="active-surface-id-badge">No Surface Active Yet</span>
+          </div>
+          <pre id="live-datamodel-json" class="code-block" style="max-height:420px;">// Start Turn 1 or Turn 2 on the left to see the live two-way bound JSON Data Model here.
+// Any change you make in the Left UI (typing, chips, slider, dropdown) updates this JSON immediately!</pre>
+        </div>
+
+        <div class="protocol-card">
+          <div class="protocol-card-header">
+            <span>Local A2UI v0.9.1 Validation Checks (`checks` Engine)</span>
+            <span class="msg-badge msg-createSurface">Browser Evaluated</span>
+          </div>
+          <div id="live-checks-status" style="padding:10px 12px;font-size:11.5px;display:flex;flex-direction:column;gap:6px;">
+            <span style="color:var(--studio-muted);">Validation rules (`required`, `email`, `regex`, `and`) will appear here when the Booking Form surface is active.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Interactive Component Tree (Hovering highlights the exact widget on the left!) -->
+      <div id="panel-components" class="inspector-body" style="display:none;">
+        <div style="font-size:11.5px;color:var(--studio-muted);">
+          Hover or click any <strong>A2UI Component definition</strong> below to spotlight the rendered native widget on the left side:
+        </div>
+        <div id="component-tree-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+
+      <!-- Tab 3: Raw Streamed Envelopes -->
+      <div id="panel-envelopes" class="inspector-body" style="display:none;">
+        <div id="envelopes-log-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="a2ui_public_sdk.js?v=1"></script>
+  <script src="app.js?v=1"></script>
+</body>
+</html>
